@@ -8,76 +8,191 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: #fff;
-    color: #222;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #1a1a1a;
     min-height: 100dvh;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    padding: 2rem;
+    overflow: hidden;
     -webkit-font-smoothing: antialiased;
-  }
-
-  .container {
-    max-width: 320px;
-    opacity: 0;
-    animation: fadeIn 0.8s ease-out 0.1s forwards;
-  }
-
-  .heading {
-    font-size: 1.1rem;
-    font-weight: 400;
-    line-height: 1.6;
-    margin-bottom: 2.5rem;
-  }
-
-  .btn {
-    display: inline-block;
-    padding: 0.85rem 2.2rem;
-    border: 1.5px solid #222;
-    border-radius: 100px;
-    color: #222;
-    text-decoration: none;
-    font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: background 0.2s, color 0.2s;
   }
 
-  .btn:active {
-    background: #222;
-    color: #fff;
+  .scene {
+    position: relative;
+    width: 300px;
+    height: 400px;
+    cursor: pointer;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+  /* All layers are absolutely positioned, centered on the flame point */
+  .layer {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
   }
+
+  /* Candle body - positioned at bottom */
+  .candle-body {
+    bottom: 20px;
+    width: 87px;
+    opacity: 0.85;
+  }
+
+  /* Flame and glow layers - positioned relative to wick top */
+  .flame-anchor {
+    position: absolute;
+    left: 50%;
+    bottom: 208px; /* wick top relative to candle bottom */
+    transform: translateX(-50%);
+  }
+
+  .flame {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 28px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .flame.visible {
+    opacity: 1;
+  }
+
+  /* Glow blob layers - centered on flame, progressively larger */
+  .glow {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 10%);
+    bottom: 0;
+    opacity: 0;
+    transition: opacity 0.6s;
+  }
+
+  .glow-inner {
+    width: 80px;
+    filter: blur(4px) brightness(1.2) sepia(0.3) saturate(1.5);
+  }
+
+  .glow-medium {
+    width: 140px;
+    filter: blur(8px) brightness(1) sepia(0.6) saturate(2);
+  }
+
+  .glow-outer {
+    width: 220px;
+    filter: blur(14px) brightness(0.85) sepia(0.8) saturate(2.5) hue-rotate(-10deg);
+  }
+
+  .glow-big-outer {
+    width: 360px;
+    filter: blur(22px) brightness(0.6) sepia(1) saturate(3) hue-rotate(-15deg);
+  }
+
+  /* Lit state glow targets */
+  .lit .glow-inner { opacity: 0.5; }
+  .lit .glow-medium { opacity: 0.35; }
+  .lit .glow-outer { opacity: 0.2; }
+  .lit .glow-big-outer { opacity: 0.12; }
+
+  /* Ambient background glow */
+  .ambient {
+    position: absolute;
+    left: 50%;
+    bottom: 180px;
+    transform: translateX(-50%);
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255, 160, 50, 0.12) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 1.5s;
+    pointer-events: none;
+  }
+
+  .lit .ambient {
+    opacity: 1;
+  }
+
 </style>
 </head>
 <body>
 
-<div class="container">
-  <p class="heading">A stranger left this for you.</p>
-  <a class="btn" id="btn" href="#">Open</a>
+<div class="scene" id="scene">
+
+  <!-- Ambient background glow -->
+  <div class="ambient"></div>
+
+  <!-- Glow blobs - A set -->
+  <div class="flame-anchor">
+    <img class="glow glow-big-outer glow-a" src="candle_parts/Big Outer A.svg">
+    <img class="glow glow-big-outer glow-b" src="candle_parts/Big Outer B.svg">
+    <img class="glow glow-outer glow-a" src="candle_parts/Outer A.svg">
+    <img class="glow glow-outer glow-b" src="candle_parts/Outer B.svg">
+    <img class="glow glow-medium glow-a" src="candle_parts/Medium A.svg">
+    <img class="glow glow-medium glow-b" src="candle_parts/Medium B.svg">
+    <img class="glow glow-inner glow-a" src="candle_parts/Inner A.svg">
+    <img class="glow glow-inner glow-b" src="candle_parts/Inner B.svg">
+
+    <!-- Flame shapes -->
+    <img class="flame flame-a" src="candle_parts/Flame A.svg">
+    <img class="flame flame-b" src="candle_parts/Flame B.svg">
+  </div>
+
+  <!-- Candle body -->
+  <img class="layer candle-body" src="candle_parts/Candle body.svg">
 </div>
 
 <script>
-const messages = [
-  "You are important to me.",
-  "I am grateful to have you in my life.",
-  "I'm glad I know you.",
-  "I appreciate you.",
-];
+const scene = document.getElementById('scene');
+let isLit = false;
+let flickerInterval = null;
 
-const message = messages[Math.floor(Math.random() * messages.length)];
-const smsURL = "sms:?&body=" + encodeURIComponent(message);
-document.getElementById("btn").href = smsURL;
+scene.addEventListener('click', () => {
+  if (isLit) return;
+  isLit = true;
+
+  // Light the candle
+  scene.classList.add('lit');
+
+  // Show frame A first
+  document.querySelector('.flame-a').classList.add('visible');
+  showGlowSet('a');
+
+  // Start flame flicker - alternate between A and B
+  let showingA = true;
+  flickerInterval = setInterval(() => {
+    if (showingA) {
+      document.querySelector('.flame-a').classList.remove('visible');
+      document.querySelector('.flame-b').classList.add('visible');
+      hideGlowSet('a');
+      showGlowSet('b');
+    } else {
+      document.querySelector('.flame-b').classList.remove('visible');
+      document.querySelector('.flame-a').classList.add('visible');
+      hideGlowSet('b');
+      showGlowSet('a');
+    }
+    showingA = !showingA;
+  }, 800 + Math.random() * 600); // irregular timing
+});
+
+function showGlowSet(set) {
+  document.querySelectorAll('.glow-' + set).forEach(el => {
+    el.style.display = '';
+  });
+}
+
+function hideGlowSet(set) {
+  document.querySelectorAll('.glow-' + set).forEach(el => {
+    el.style.display = 'none';
+  });
+}
+
+// Initially hide B set
+hideGlowSet('b');
 </script>
 
 </body>
